@@ -1,0 +1,30 @@
+{
+  "name": "angular-ui-router-modal",
+  "version": "0.0.1",
+  "homepage": "https://github.com/kasperlewau/angular-ui-router-modal",
+  "authors": [
+    "Kasper Lewau <lewauu@gmail.com> (https://github.com/kasperlewau)"
+  ],
+  "description": "adds .modalState to ui-router $stateProvider",
+  "main": "dist/angular-ui-router-modal.js",
+  "keywords": [
+    "angular",
+    "angular-q",
+    "angular-ui-router-modal",
+    "angular-delay",
+    "angular-promise",
+    "angular-$q"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test"
+  ],
+  "dependencies": {
+    "angular": "~1.3.15",
+    "ui-router-extras": "~0.0.13",
+    "ui-router": "~0.2.14"
+  }
+}
