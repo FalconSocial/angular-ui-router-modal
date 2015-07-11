@@ -2,7 +2,7 @@
 
 > Add .modalState method to ui.router.$stateProvider
 
-## Install
+## installation
 **not yet available**
 ```
 $ bower install angular-ui-router-modal --save
@@ -10,7 +10,7 @@ $ jspm install angular-ui-router-modal --save
 $ npm install angular-ui-router-modal --save
 ```
 
-## Usage
+## usage
 ### $uiRouterModalProvider
 > todo: write it up
 
@@ -25,7 +25,7 @@ $uiRouterModalProvider.config({
   stickyOpeneres:   /** Boolean **/
 });
 ```
-#### $uiRouterModalProvider.$get
+##### $uiRouterModalProvider.$get
 Returns the configuration block along with some attached convenience methods.
 
 #### $uiRouterModal.$close
@@ -51,13 +51,11 @@ $stateProvider.modalState('someModal', {
   /** etc etc **/
 });
 ```
-## Testing
+## testing
 
 ```
 $ npm install; npm test
 ```
 
-
-## License
-
-MIT © [Kasper Lewau](github.com/kasperlewau)
+## license
+MIT © [Kasper Lewau](https://github.com/kasperlewau)
