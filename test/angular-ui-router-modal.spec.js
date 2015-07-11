@@ -22,8 +22,8 @@
         expect(modul._runBlocks).to.eql([]);
       });
 
-      it('has set up one config block', function () {
-        expect(modul._configBlocks).to.be.an('array').with.length(1);
+      it('has set up two config blocks', function () {
+        expect(modul._configBlocks).to.be.an('array').with.length(2);
       });
 
       it('registers a provider', function () {
@@ -44,7 +44,7 @@
     });
 
     context('{Provider} $uiRouterModalProvider', function () {
-      var provider, sProvider;
+      var provider, sProvider, $state;
 
       beforeEach(function () {
         module('angular.ui.router.modal', function ($uiRouterModalProvider, $stateProvider) {
@@ -52,7 +52,9 @@
           sProvider = $stateProvider;
         });
 
-        inject();
+        inject(function ($injector) {
+          $state = $injector.get('$state');
+        });
       });
 
       it('is defined', function () {
@@ -140,6 +142,38 @@
 
         it('attaches a $close method to the instance', function () {
           expect(instance).to.have.property('$close').that.is.a('function');
+        });
+      });
+
+      context('.config({ stickyOpeners: true })', function () {
+        it('sets sticky true on all non-modal states', function () {
+          provider.config({ stickyOpeners: true });
+          sProvider.state('normalState', {});
+          expect($state.get('normalState').sticky).to.eq(true);
+        });
+
+        it('does not override state specific sticky values', function () {
+          provider.config({ stickyOpeners: true });
+          sProvider.state('normalState', { sticky: false });
+          expect($state.get('normalState').sticky).to.eq(false);
+        });
+
+        it('does not set sticky if stickyOpeners is undefined', function () {
+          provider.config({ stickyOpeners: undefined });
+          sProvider.state('normalState', {});
+          expect($state.get('normalState')).to.not.have.property('sticky');
+        });
+
+        it('does not set sticky if stickyOpeners is false', function () {
+          provider.config({ stickyOpeners: false });
+          sProvider.state('normalState', {});
+          expect($state.get('normalState')).to.not.have.property('sticky');
+        });
+
+        it('does not touch modal states', function () {
+          provider.config({ stickyOpeners: true });
+          sProvider.modalState('modalState', { sticky: false });
+          expect($state.get('modalState').sticky).to.equal(false);
         });
       });
     });

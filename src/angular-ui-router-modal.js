@@ -91,6 +91,9 @@
     provider.$get = $get;
   }
 
+  /**
+   * Modal close method.
+   */
   function $close (root, state) {
     state.go('^');
   }
@@ -123,7 +126,7 @@
     function resolveAndDecorate ($scope, $element, $attrs, ogCtrl) {
       var locals      = { $scope: $scope, $element: $element, $attrs: $attrs };
       var resolve     = original.resolve;
-      var resolveKeys = Object.keys(resolve);
+      var resolveKeys = resolve ? Object.keys(resolve) : [];
 
       function assign (result) {
         result.forEach(function (value, i) {
@@ -150,8 +153,8 @@
   /**
    * Add .modalState functionality.
    */
-  $stateDecorator.$inject = [ '$stateProvider', '$uiRouterModalProvider', '$controllerProvider', '$injector' ];
-  function $stateDecorator ($stateProvider, $uiRouterModalProvider, $controllerProvider, $injector) {
+  $stateModalStateDecorator.$inject = [ '$stateProvider', '$uiRouterModalProvider', '$controllerProvider', '$injector' ];
+  function $stateModalStateDecorator ($stateProvider, $uiRouterModalProvider, $controllerProvider, $injector) {
     var originalState = $stateProvider.state;
 
     function modalStateFn (name, stateDef) {
@@ -186,6 +189,30 @@
   }
 
   /**
+   * Set sticky:true on all non-modal states
+   * if $uiRouterModal.stickyOpeners is true.
+   *
+   * Do nothing if $uiRouterModal.stickyOpeners is false or undefined.
+   *
+   * @params {Object} state The original state definition.
+   * @returns {Object} state The modified state definition.
+   */
+  $stateStickyDecorator.$inject = [ '$stateProvider', '$uiRouterModalProvider' ];
+  function $stateStickyDecorator ($stateProvider, $uiRouterModalProvider) {
+    $stateProvider.decorator('sticky', function (state) {
+      var stickyOpeners = $uiRouterModalProvider.stickyOpeners;
+      var stateSticky   = state.self.sticky;
+      var modalState    = !!state.self.$$originalState;
+
+      if (!modalState && stateSticky === undefined && stickyOpeners !== undefined && !!stickyOpeners) {
+        state.self.sticky = stickyOpeners;
+      }
+
+      return state;
+    });
+  }
+
+  /**
    * Bundle it all up.
    */
   angular
@@ -193,6 +220,7 @@
     .provider('$uiRouterModal', $uiRouterModalProvider)
     .directive('uiModalView', $uiModalViewDirective)
     .directive('uiModalFill', $uiModalFillDirective)
-    .config($stateDecorator);
+    .config($stateModalStateDecorator)
+    .config($stateStickyDecorator);
 
 }());
