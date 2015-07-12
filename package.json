@@ -16,10 +16,9 @@
   },
   "keywords": [
     "angular",
-    "angular-q",
+    "angular-ui-router",
     "angular-ui-router-modal",
-    "angular-promise",
-    "angular-$q"
+    "angular-modal"
   ],
   "author": "Kasper Lewau <lewauu@gmail.com> (https://github.com/kasperlewau)",
   "license": "MIT",

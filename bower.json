@@ -9,11 +9,9 @@
   "main": "dist/angular-ui-router-modal.js",
   "keywords": [
     "angular",
-    "angular-q",
+    "angular-ui-router",
     "angular-ui-router-modal",
-    "angular-delay",
-    "angular-promise",
-    "angular-$q"
+    "angular-modal"
   ],
   "license": "MIT",
   "ignore": [
