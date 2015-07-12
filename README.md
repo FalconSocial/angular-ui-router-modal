@@ -1,5 +1,4 @@
-# angular-ui-router-modal ![travisci](https://travis-ci.org/kasperlewau/angular-ui-router-modal.svg?branch=master)
-
+# angular-ui-router-modal [![travisci](https://travis-ci.org/kasperlewau/angular-ui-router-modal.svg?branch=master)](https://travis-ci.org/kasperlewau/angular-ui-router-modal)
 > Add .modalState method to ui.router.$stateProvider
 
 ## installation
