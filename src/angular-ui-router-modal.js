@@ -57,6 +57,7 @@
       'controllerAs',
       'templateUrl',
       'rootState',
+      'fallbackState',
       'viewName',
       'stickyOpeners',
       'resolve'
@@ -94,7 +95,7 @@
     $get.$inject = [ '$rootScope', '$state' ];
     function $get ($rootScope, $state) {
       return angular.extend({}, angular.extend(config, {
-        $close: $close.bind(provider, $rootScope, $state)
+        $close: $close.bind(provider, $rootScope, $state, config)
       }));
     }
 
@@ -104,8 +105,17 @@
   /**
    * Modal close method.
    */
-  function $close (root, state) {
-    state.go('^');
+  function $close (root, state, config) {
+    try {
+        state.go('^');
+        try {
+            state.go(config.rootState);
+        } catch (e) {
+            state.go(config.fallbackState);
+        }
+    } catch (e) {
+        state.go(config.fallbackState);
+    }
   }
 
   /**
