@@ -1,8 +1,3 @@
-  /**
-   * ::TODO
-   * - Sticky true/false on $state and $modalState
-   */
-
 (function () {
 
   'use strict';
@@ -36,6 +31,20 @@
     return stateDef;
   }
 
+  var STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
+  var ARGUMENT_NAMES = /([^\s,]+)/g;
+  function getParamNames(func) {
+    var fnStr = func.toString().replace(STRIP_COMMENTS, '');
+    var result = fnStr.slice(fnStr.indexOf('(')+1, fnStr.indexOf(')')).match(ARGUMENT_NAMES);
+    if(result === null)
+       result = [];
+    return result;
+  }
+
+  function isFunction (func) {
+    return typeof func === 'function';
+  }
+
   /**
    * Configuration provider for modal states.
    */
@@ -45,6 +54,7 @@
     var configured    = false;
     var ALLOWED_PROPS = [
       'controller',
+      'controllerAs',
       'templateUrl',
       'rootState',
       'viewName',
@@ -123,6 +133,11 @@
       throw new Error('not a modal state!');
     }
 
+    function invoke (fn, self, locals) {
+      locals = locals || getParamNames(fn);
+      return $injector.invoke(fn, self, locals);
+    }
+
     function resolveAndDecorate ($scope, $element, $attrs, ogCtrl) {
       var locals      = { $scope: $scope, $element: $element, $attrs: $attrs };
       var resolve     = original.resolve;
@@ -137,8 +152,16 @@
       }
 
       return $q.all(resolveKeys.map(function (key) {
-        return $injector.invoke(resolve[key]);
+        return invoke(resolve[key]);
       })).then(assign.bind(this));
+    }
+
+    if (isFunction(original.controllerProvider)) {
+        original.controller = invoke(original.controllerProvider, null);
+    }
+
+    if (isFunction(original.templateProvider)) {
+        original.templateUrl = invoke(original.templateProvider, null);
     }
 
     return {
@@ -146,7 +169,8 @@
       templateUrl: original.templateUrl,
       controller: function ($scope, $element, $attrs) {
         return resolveAndDecorate.call(this, $scope, $element, $attrs, original.controller);
-      }
+      },
+      controllerAs: original.controllerAs
     }
   }
 
@@ -158,7 +182,7 @@
     var originalState = $stateProvider.state;
 
     function modalStateFn (name, stateDef) {
-      var props       = [ 'templateUrl', 'controller', 'resolve' ];
+      var props       = [ 'templateUrl', 'controller', 'resolve', 'templateProvider', 'controllerProvider', 'controllerAs' ];
       var viewName    = $uiRouterModalProvider.viewName;
       var absViewName = viewName + '@' + $uiRouterModalProvider.rootState;
 
@@ -166,16 +190,18 @@
       stateDef.sticky = stateDef.sticky || false;
 
       stateDef.views[absViewName] = {
-        templateUrl: $uiRouterModalProvider.templateUrl,
-        controller:  $uiRouterModalProvider.controller,
-        resolve:     $uiRouterModalProvider.resolve
+        templateUrl:  $uiRouterModalProvider.templateUrl,
+        controller:   $uiRouterModalProvider.controller,
+        controllerAs: $uiRouterModalProvider.controllerAs,
+        resolve:      $uiRouterModalProvider.resolve
       };
 
       Object.defineProperty(stateDef, '$$originalState', {
         value: {
-          templateUrl: stateDef.templateUrl,
-          controller:  stateDef.controller,
-          resolve:     merge(stateDef.resolve)
+          controllerProvider: stateDef.controllerProvider,
+          templateProvider: stateDef.templateProvider,
+          controllerAs: stateDef.controllerAs,
+          resolve:      merge(stateDef.resolve)
         },
         writable: false
       });
