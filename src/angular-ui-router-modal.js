@@ -135,8 +135,8 @@
    * Directive to load the content specified in the modal state into
    * the modal template.
    */
-  $uiModalFillDirective.$inject = [ '$state', '$uiRouterModal', '$controller', '$injector', '$q' ];
-  function $uiModalFillDirective ($state, $uiRouterModal, $controller, $injector, $q) {
+  $uiModalFillDirective.$inject = [ '$state', '$uiRouterModal', '$controller', '$templateRequest', '$compile', '$injector', '$q' ];
+  function $uiModalFillDirective ($state, $uiRouterModal, $controller, $templateRequest, $compile, $injector, $q) {
     var original = $state.current.$$originalState;
 
     if (!original) {
@@ -148,40 +148,62 @@
       return $injector.invoke(fn, self, locals);
     }
 
-    function resolveAndDecorate ($scope, $element, $attrs, ogCtrl) {
+    function resolveAndDecorate ($scope, $element, $attrs, ctrl) {
       var locals      = { $scope: $scope, $element: $element, $attrs: $attrs };
-      var resolve     = original.resolve;
-      var resolveKeys = resolve ? Object.keys(resolve) : [];
+      var ogResolve   = original.resolve;
+      var resolveKeys = ogResolve ? Object.keys(ogResolve) : [];
 
-      function assign (result) {
+      function decorate (result) {
         result.forEach(function (value, i) {
           locals[resolveKeys[i]] = value;
         });
 
-        return angular.extend(this, $controller(ogCtrl, locals));
+        return angular.extend(this, $controller(ctrl, locals));
       }
 
-      return $q.all(resolveKeys.map(function (key) {
-        return invoke(resolve[key]);
-      })).then(assign.bind(this));
+      function resolve (keys) {
+        return keys.map(function (key) {
+          return invoke(ogResolve[key]);
+        });
+      }
+
+      return $q
+        .all(resolve(resolveKeys))
+        .then(decorate.bind(this));
     }
 
     if (isFunction(original.controllerProvider)) {
-        original.controller = invoke(original.controllerProvider, null);
+      original.controller = invoke(original.controllerProvider, null);
     }
 
+    var shouldRequestTemplate = false;
+
     if (isFunction(original.templateProvider)) {
-        original.templateUrl = invoke(original.templateProvider, null);
+      var tplRequest = null;
+      shouldRequestTemplate = true;
     }
 
     return {
       restrict: 'ACE',
-      templateUrl: original.templateUrl,
+      controllerAs: original.controllerAs,
+      templateUrl: !shouldRequestTemplate ? original.templateUrl : '',
       controller: function ($scope, $element, $attrs) {
         return resolveAndDecorate.call(this, $scope, $element, $attrs, original.controller);
       },
-      controllerAs: original.controllerAs
-    }
+      compile: function (tEl, tAttrs) {
+        if (shouldRequestTemplate) {
+          tplRequest = $templateRequest(invoke(original.templateProvider, null));
+        }
+
+        return function ($scope, $element, $attrs) {
+          if (tplRequest && tplRequest.$$state) {
+            tplRequest.then(function (html) {
+              $element.html($compile(html)($scope));
+            });
+          }
+        }
+      }
+    };
   }
 
   /**
@@ -200,10 +222,11 @@
       stateDef.sticky = stateDef.sticky || false;
 
       stateDef.views[absViewName] = {
-        templateUrl:  $uiRouterModalProvider.templateUrl,
-        controller:   $uiRouterModalProvider.controller,
-        controllerAs: $uiRouterModalProvider.controllerAs,
-        resolve:      $uiRouterModalProvider.resolve
+        templateUrl:    $uiRouterModalProvider.templateUrl,
+        controller:     $uiRouterModalProvider.controller,
+        controllerAs:   $uiRouterModalProvider.controllerAs,
+        resolve:        $uiRouterModalProvider.resolve,
+        reloadOnSearch: true
       };
 
       Object.defineProperty(stateDef, '$$originalState', {
