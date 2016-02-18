@@ -158,7 +158,13 @@
           locals[resolveKeys[i]] = value;
         });
 
-        return angular.extend(this, $controller(ctrl, locals));
+        var ctrlArgs = [ctrl, locals];
+
+        if (!!original.controllerAs) {
+          ctrlArgs.concat([false, original.controllerAs]);
+        }
+
+        return angular.extend(this, $controller.apply(this, ctrlArgs));
       }
 
       function resolve (keys) {
