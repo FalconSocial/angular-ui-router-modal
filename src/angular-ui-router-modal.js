@@ -172,10 +172,6 @@
         .then(decorate.bind(this));
     }
 
-    if (isFunction(original.controllerProvider)) {
-      original.controller = invoke(original.controllerProvider, null);
-    }
-
     var shouldRequestTemplate = false;
 
     if (isFunction(original.templateProvider)) {
@@ -188,7 +184,15 @@
       controllerAs: original.controllerAs,
       templateUrl: !shouldRequestTemplate ? original.templateUrl : '',
       controller: function ($scope, $element, $attrs) {
-        return resolveAndDecorate.call(this, $scope, $element, $attrs, original.controller);
+        var ctrl;
+
+        if (isFunction(original.controllerProvider)) {
+            ctrl = invoke(original.controllerProvider, null);
+        } else {
+            ctrl = original.controller;
+        }
+
+        return resolveAndDecorate.call(this, $scope, $element, $attrs, ctrl);
       },
       compile: function (tEl, tAttrs) {
         if (shouldRequestTemplate) {
