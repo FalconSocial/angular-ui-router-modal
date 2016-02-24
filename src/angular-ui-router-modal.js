@@ -268,7 +268,7 @@
    */
   $stateStickyDecorator.$inject = [ '$stateProvider', '$uiRouterModalProvider' ];
   function $stateStickyDecorator ($stateProvider, $uiRouterModalProvider) {
-    $stateProvider.decorator('sticky', function (state) {
+    $stateProvider.decorator('__sticky', function (state) {
       var stickyOpeners = $uiRouterModalProvider.stickyOpeners;
       var stateSticky   = state.self.sticky;
       var modalState    = !!state.self.$$originalState;

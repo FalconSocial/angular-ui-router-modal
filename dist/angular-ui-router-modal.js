@@ -93,8 +93,8 @@
             }
         };
     }
-    $uiModalFillDirective.$inject = [ "$state", "$uiRouterModal", "$controller", "$injector", "$q" ];
-    function $uiModalFillDirective($state, $uiRouterModal, $controller, $injector, $q) {
+    $uiModalFillDirective.$inject = [ "$state", "$uiRouterModal", "$controller", "$templateRequest", "$compile", "$injector", "$q" ];
+    function $uiModalFillDirective($state, $uiRouterModal, $controller, $templateRequest, $compile, $injector, $q) {
         var original = $state.current.$$originalState;
         if (!original) {
             throw new Error("not a modal state!");
@@ -103,37 +103,61 @@
             locals = locals || getParamNames(fn);
             return $injector.invoke(fn, self, locals);
         }
-        function resolveAndDecorate($scope, $element, $attrs, ogCtrl) {
+        function resolveAndDecorate($scope, $element, $attrs, ctrl) {
             var locals = {
                 $scope: $scope,
                 $element: $element,
                 $attrs: $attrs
             };
-            var resolve = original.resolve;
-            var resolveKeys = resolve ? Object.keys(resolve) : [];
-            function assign(result) {
+            var ogResolve = original.resolve;
+            var resolveKeys = ogResolve ? Object.keys(ogResolve) : [];
+            function decorate(result) {
                 result.forEach(function(value, i) {
                     locals[resolveKeys[i]] = value;
                 });
-                return angular.extend(this, $controller(ogCtrl, locals));
+                var ctrlArgs = [ ctrl, locals ];
+                if (!!original.controllerAs) {
+                    ctrlArgs.concat([ false, original.controllerAs ]);
+                }
+                return angular.extend(this, $controller.apply(this, ctrlArgs));
             }
-            return $q.all(resolveKeys.map(function(key) {
-                return invoke(resolve[key]);
-            })).then(assign.bind(this));
+            function resolve(keys) {
+                return keys.map(function(key) {
+                    return invoke(ogResolve[key]);
+                });
+            }
+            return $q.all(resolve(resolveKeys)).then(decorate.bind(this));
         }
-        if (isFunction(original.controllerProvider)) {
-            original.controller = invoke(original.controllerProvider, null);
-        }
+        var shouldRequestTemplate = false;
         if (isFunction(original.templateProvider)) {
-            original.templateUrl = invoke(original.templateProvider, null);
+            var tplRequest = null;
+            shouldRequestTemplate = true;
         }
         return {
             restrict: "ACE",
-            templateUrl: original.templateUrl,
+            controllerAs: original.controllerAs,
+            templateUrl: !shouldRequestTemplate ? original.templateUrl : "",
             controller: function($scope, $element, $attrs) {
-                return resolveAndDecorate.call(this, $scope, $element, $attrs, original.controller);
+                var ctrl;
+                if (isFunction(original.controllerProvider)) {
+                    ctrl = invoke(original.controllerProvider, null);
+                } else {
+                    ctrl = original.controller;
+                }
+                return resolveAndDecorate.call(this, $scope, $element, $attrs, ctrl);
             },
-            controllerAs: original.controllerAs
+            compile: function(tEl, tAttrs) {
+                if (shouldRequestTemplate) {
+                    tplRequest = $templateRequest(invoke(original.templateProvider, null));
+                }
+                return function($scope, $element, $attrs) {
+                    if (tplRequest && tplRequest.$$state) {
+                        tplRequest.then(function(html) {
+                            $element.html($compile(html)($scope));
+                        });
+                    }
+                };
+            }
         };
     }
     $stateModalStateDecorator.$inject = [ "$stateProvider", "$uiRouterModalProvider", "$controllerProvider", "$injector" ];
@@ -149,7 +173,8 @@
                 templateUrl: $uiRouterModalProvider.templateUrl,
                 controller: $uiRouterModalProvider.controller,
                 controllerAs: $uiRouterModalProvider.controllerAs,
-                resolve: $uiRouterModalProvider.resolve
+                resolve: $uiRouterModalProvider.resolve,
+                reloadOnSearch: true
             };
             Object.defineProperty(stateDef, "$$originalState", {
                 value: {
@@ -167,7 +192,7 @@
     }
     $stateStickyDecorator.$inject = [ "$stateProvider", "$uiRouterModalProvider" ];
     function $stateStickyDecorator($stateProvider, $uiRouterModalProvider) {
-        $stateProvider.decorator("sticky", function(state) {
+        $stateProvider.decorator("__sticky", function(state) {
             var stickyOpeners = $uiRouterModalProvider.stickyOpeners;
             var stateSticky = state.self.sticky;
             var modalState = !!state.self.$$originalState;
