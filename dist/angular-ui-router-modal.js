@@ -117,7 +117,7 @@
                 });
                 var ctrlArgs = [ ctrl, locals ];
                 if (!!original.controllerAs) {
-                    ctrlArgs.concat([ false, original.controllerAs ]);
+                    ctrlArgs = ctrlArgs.concat([ false, original.controllerAs ]);
                 }
                 return angular.extend(this, $controller.apply(this, ctrlArgs));
             }
