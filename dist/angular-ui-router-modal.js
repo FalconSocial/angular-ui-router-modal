@@ -40,7 +40,7 @@
         var provider = this;
         var config = {};
         var configured = false;
-        var ALLOWED_PROPS = [ "controller", "controllerAs", "templateUrl", "rootState", "fallbackState", "viewName", "stickyOpeners", "resolve" ];
+        var ALLOWED_PROPS = [ "controller", "controllerAs", "templateUrl", "rootState", "fallbackState", "viewName", "stickyOpeners", "resolve", "closeOnEscape" ];
         ALLOWED_PROPS.forEach(function(prop) {
             Object.defineProperty(provider, prop, {
                 get: function() {
@@ -93,8 +93,8 @@
             }
         };
     }
-    $uiModalFillDirective.$inject = [ "$state", "$uiRouterModal", "$controller", "$templateRequest", "$compile", "$injector", "$q" ];
-    function $uiModalFillDirective($state, $uiRouterModal, $controller, $templateRequest, $compile, $injector, $q) {
+    $uiModalFillDirective.$inject = [ "$state", "$uiRouterModal", "$document", "$controller", "$templateRequest", "$compile", "$injector", "$q" ];
+    function $uiModalFillDirective($state, $uiRouterModal, $document, $controller, $templateRequest, $compile, $injector, $q) {
         var original = $state.current.$$originalState;
         if (!original) {
             throw new Error("not a modal state!");
@@ -150,11 +150,20 @@
                 if (shouldRequestTemplate) {
                     tplRequest = $templateRequest(invoke(original.templateProvider, null));
                 }
-                return function($scope, $element, $attrs) {
+                return function($scope, $element, $attrs, ctrl) {
                     if (tplRequest && tplRequest.$$state) {
                         tplRequest.then(function(html) {
                             $element.html($compile(html)($scope));
                         });
+                        if (!!$uiRouterModal.closeOnEscape) {
+                            function onKeyUp(e) {
+                                if (e.keyCode === 27) {
+                                    $uiRouterModal.$close();
+                                    $document.unbind("keyup", onKeyUp);
+                                }
+                            }
+                            $document.bind("keyup", onKeyUp);
+                        }
                     }
                 };
             }

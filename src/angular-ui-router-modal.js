@@ -60,7 +60,8 @@
       'fallbackState',
       'viewName',
       'stickyOpeners',
-      'resolve'
+      'resolve',
+      'closeOnEscape'
     ];
 
     ALLOWED_PROPS.forEach(function (prop) {
@@ -135,8 +136,8 @@
    * Directive to load the content specified in the modal state into
    * the modal template.
    */
-  $uiModalFillDirective.$inject = [ '$state', '$uiRouterModal', '$controller', '$templateRequest', '$compile', '$injector', '$q' ];
-  function $uiModalFillDirective ($state, $uiRouterModal, $controller, $templateRequest, $compile, $injector, $q) {
+  $uiModalFillDirective.$inject = [ '$state', '$uiRouterModal', '$document', '$controller', '$templateRequest', '$compile', '$injector', '$q' ];
+  function $uiModalFillDirective ($state, $uiRouterModal, $document, $controller, $templateRequest, $compile, $injector, $q) {
     var original = $state.current.$$originalState;
 
     if (!original) {
@@ -205,11 +206,23 @@
           tplRequest = $templateRequest(invoke(original.templateProvider, null));
         }
 
-        return function ($scope, $element, $attrs) {
+        return function ($scope, $element, $attrs, ctrl) {
           if (tplRequest && tplRequest.$$state) {
             tplRequest.then(function (html) {
               $element.html($compile(html)($scope));
             });
+
+
+            if (!!$uiRouterModal.closeOnEscape) {
+                function onKeyUp (e) {
+                    if (e.keyCode === 27) {
+                        $uiRouterModal.$close();
+                        $document.unbind('keyup', onKeyUp);
+                    }
+                }
+
+                $document.bind('keyup', onKeyUp);
+            }
           }
         }
       }
