@@ -212,16 +212,15 @@
               $element.html($compile(html)($scope));
             });
 
+            function onKeyUp (e) {
+                if (e.keyCode === 27) {
+                    $uiRouterModal.$close();
+                    $document.unbind('keyup', onKeyUp);
+                }
+            }
 
             if (!!$uiRouterModal.closeOnEscape) {
-                function onKeyUp (e) {
-                    if (e.keyCode === 27) {
-                        $uiRouterModal.$close();
-                        $document.unbind('keyup', onKeyUp);
-                    }
-                }
-
-                $document.bind('keyup', onKeyUp);
+              $document.bind('keyup', onKeyUp);
             }
           }
         }

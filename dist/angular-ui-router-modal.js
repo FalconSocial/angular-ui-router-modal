@@ -155,13 +155,13 @@
                         tplRequest.then(function(html) {
                             $element.html($compile(html)($scope));
                         });
-                        if (!!$uiRouterModal.closeOnEscape) {
-                            function onKeyUp(e) {
-                                if (e.keyCode === 27) {
-                                    $uiRouterModal.$close();
-                                    $document.unbind("keyup", onKeyUp);
-                                }
+                        function onKeyUp(e) {
+                            if (e.keyCode === 27) {
+                                $uiRouterModal.$close();
+                                $document.unbind("keyup", onKeyUp);
                             }
+                        }
+                        if (!!$uiRouterModal.closeOnEscape) {
                             $document.bind("keyup", onKeyUp);
                         }
                     }
