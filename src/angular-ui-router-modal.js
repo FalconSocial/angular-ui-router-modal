@@ -93,10 +93,10 @@
       configured = true;
     };
 
-    $get.$inject = [ '$rootScope', '$state' ];
-    function $get ($rootScope, $state) {
+    $get.$inject = [ '$rootScope', '$state', '$previousState' ];
+    function $get ($rootScope, $state, $previousState) {
       return angular.extend({}, angular.extend(config, {
-        $close: $close.bind(provider, $rootScope, $state, config)
+        $close: $close.bind(provider, $rootScope, $state, $previousState, config)
       }));
     }
 
@@ -106,16 +106,21 @@
   /**
    * Modal close method.
    */
-  function $close (root, state, config) {
-    try {
-        state.go('^');
+  function $close (root, state, prev, config, goBack) {
+    if (goBack) {
+        return prev.go()
+            .catch(function (err) {
+                throw new Error(err);
+            })
+            .then(function (res) {
+                return res;
+            })
+    } else {
         try {
-            state.go(config.rootState);
+            return state.go(config.rootState);
         } catch (e) {
-            state.go(config.fallbackState);
+            return state.go(config.fallbackState);
         }
-    } catch (e) {
-        state.go(config.fallbackState);
     }
   }
 
@@ -136,8 +141,8 @@
    * Directive to load the content specified in the modal state into
    * the modal template.
    */
-  $uiModalFillDirective.$inject = [ '$state', '$uiRouterModal', '$document', '$controller', '$templateRequest', '$compile', '$injector', '$q' ];
-  function $uiModalFillDirective ($state, $uiRouterModal, $document, $controller, $templateRequest, $compile, $injector, $q) {
+  $uiModalFillDirective.$inject = [ '$state', '$stateParams', '$uiRouterModal', '$document', '$controller', '$templateRequest', '$compile', '$injector', '$q' ];
+  function $uiModalFillDirective ($state, $stateParams, $uiRouterModal, $document, $controller, $templateRequest, $compile, $injector, $q) {
     var original = $state.current.$$originalState;
 
     if (!original) {
@@ -212,16 +217,22 @@
               $element.html($compile(html)($scope));
             });
 
+            function unbind () {
+                $document.unbind('keyup', onKeyUp);
+            }
+
             function onKeyUp (e) {
                 if (e.keyCode === 27) {
-                    $uiRouterModal.$close();
-                    $document.unbind('keyup', onKeyUp);
+                    $uiRouterModal.$close($stateParams.goBack);
+                    unbind();
                 }
             }
 
             if (!!$uiRouterModal.closeOnEscape) {
               $document.bind('keyup', onKeyUp);
             }
+
+            $scope.$on('$destroy', unbind);
           }
         }
       }
