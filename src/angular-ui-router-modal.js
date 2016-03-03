@@ -2,16 +2,6 @@
 
   'use strict';
 
-  function pullProps (src, props) {
-    var out = {};
-
-    props.forEach(function (key) {
-      out[key] = src[key];
-    });
-
-    return out;
-  }
-
   function merge (src, dest) {
     if (!dest || typeof dest !== 'object') { return src; }
     if (!src  || typeof src !== 'object')  { return dest; }
@@ -114,7 +104,7 @@
             })
             .then(function (res) {
                 return res;
-            })
+            });
     } else {
         try {
             return state.go(config.rootState);
@@ -134,7 +124,7 @@
       template: function () {
         return '<div ui-view="' + $uiRouterModal.viewName + '"></div>';
       }
-    }
+    };
   }
 
   /**
@@ -206,35 +196,35 @@
 
         return resolveAndDecorate.call(this, $scope, $element, $attrs, ctrl);
       },
-      compile: function (tEl, tAttrs) {
+      compile: function () {
         if (shouldRequestTemplate) {
           tplRequest = $templateRequest(invoke(original.templateProvider, null));
         }
 
-        return function ($scope, $element, $attrs, ctrl) {
+        return function ($scope, $element) {
           if (tplRequest && tplRequest.$$state) {
             tplRequest.then(function (html) {
               $element.html($compile(html)($scope));
             });
-
-            function unbind () {
-                $document.unbind('keyup', onKeyUp);
-            }
-
-            function onKeyUp (e) {
-                if (e.keyCode === 27) {
-                    $uiRouterModal.$close($stateParams.goBack);
-                    unbind();
-                }
-            }
-
-            if (!!$uiRouterModal.closeOnEscape) {
-              $document.bind('keyup', onKeyUp);
-            }
-
-            $scope.$on('$destroy', unbind);
           }
-        }
+
+          function unbind () {
+              $document.unbind('keyup', onKeyUp);
+          }
+
+          function onKeyUp (e) {
+              if (e.keyCode === 27) {
+                  $uiRouterModal.$close($stateParams.goBack);
+                  unbind();
+              }
+          }
+
+          if (!!$uiRouterModal.closeOnEscape) {
+            $document.bind('keyup', onKeyUp);
+          }
+
+          $scope.$on('$destroy', unbind);
+        };
       }
     };
   }
@@ -242,8 +232,8 @@
   /**
    * Add .modalState functionality.
    */
-  $stateModalStateDecorator.$inject = [ '$stateProvider', '$uiRouterModalProvider', '$controllerProvider', '$injector' ];
-  function $stateModalStateDecorator ($stateProvider, $uiRouterModalProvider, $controllerProvider, $injector) {
+  $stateModalStateDecorator.$inject = [ '$stateProvider', '$uiRouterModalProvider' ];
+  function $stateModalStateDecorator ($stateProvider, $uiRouterModalProvider) {
     var originalState = $stateProvider.state;
 
     function modalStateFn (name, stateDef) {
