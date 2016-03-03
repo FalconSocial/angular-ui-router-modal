@@ -8,7 +8,7 @@
     "lint": "jshint src/*.js",
     "build:min": "uglifyjs src/*.js -o dist/angular-ui-router-modal.min.js",
     "build:beauty": "uglifyjs src/*.js -o dist/angular-ui-router-modal.js -b -i 2",
-    "build": "npm run build:min; npm run build:beauty"
+    "build": "npm run lint && npm run build:min && npm run build:beauty"
   },
   "repository": {
     "type": "git",
