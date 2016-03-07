@@ -65,18 +65,24 @@
         }
         provider.$get = $get;
     }
-    function $close(root, state, prev, config, goBack) {
-        if (goBack) {
-            return prev.go().catch(function(err) {
-                throw new Error(err);
-            }).then(function(res) {
+    function $close(root, state, prev, config, goBack, cb) {
+        function errHandler(err) {
+            throw new Error(err);
+        }
+        function successHandler(res) {
+            if (typeof cb === "function") {
+                return cb(res);
+            } else {
                 return res;
-            });
+            }
+        }
+        if (goBack) {
+            return prev.go().catch(errHandler).then(successHandler);
         } else {
             try {
-                return state.go(config.rootState);
-            } catch (e) {
-                return state.go(config.fallbackState);
+                return state.go(config.rootState).catch(errHandler).then(successHandler);
+            } catch (err) {
+                return state.go(config.fallbackState).catch(errHandler).then(successHandler);
             }
         }
     }
@@ -157,7 +163,7 @@
                     }
                     function onKeyUp(e) {
                         if (e.keyCode === 27) {
-                            $uiRouterModal.$close($stateParams.goBack);
+                            $uiRouterModal.$close($stateParams.goBack, $stateParams.cb);
                             unbind();
                         }
                     }
