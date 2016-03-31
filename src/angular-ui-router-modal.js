@@ -109,7 +109,7 @@
       }
     }
 
-    if (goBack) {
+    if (goBack && !!prev.get()) {
       return prev.go()
         .catch(errHandler)
         .then(successHandler);
