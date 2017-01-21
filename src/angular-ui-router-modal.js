@@ -216,7 +216,7 @@
         return function ($scope, $element) {
           if (tplRequest && tplRequest.$$state) {
             tplRequest.then(function (html) {
-              $element.html($compile(html)($scope));
+              $element[0].appendChild($compile(html)($scope)[0]);
             });
           }
 
