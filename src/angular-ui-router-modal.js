@@ -198,13 +198,18 @@
       controllerAs: original.controllerAs,
       templateUrl: !shouldRequestTemplate ? original.templateUrl : '',
       controller: function ($scope, $element, $attrs) {
-        var ctrl;
+        var ctrl = original.controllerProvider;
+        var ctrlFn;
+        var ctrlDeps;
 
-        if (isFunction(original.controllerProvider)) {
-            ctrl = invoke(original.controllerProvider, null);
-        } else {
-            ctrl = original.controller;
+        if (typeof ctrl === 'object' && ctrl.length) {
+            ctrlFn = ctrl[ctrl.length - 1];
+            ctrlDeps = ctrl.slice(0, ctrl.length - 1);
+        } else if (isFunction(ctrl)) {
+            ctrlFn = ctrl;
         }
+
+        ctrl = invoke(ctrlFn, null, ctrlDeps);
 
         return resolveAndDecorate.call(this, $scope, $element, $attrs, ctrl);
       },
