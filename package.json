@@ -1,6 +1,6 @@
 {
   "name": "angular-ui-router-modal",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "adds .modalState to ui-router $stateProvider",
   "main": "dist/angular-ui-router-modal.js",
   "scripts": {
