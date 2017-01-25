@@ -31,10 +31,6 @@
     return result;
   }
 
-  function isFunction (func) {
-    return typeof func === 'function';
-  }
-
   /**
    * Configuration provider for modal states.
    */
@@ -152,7 +148,7 @@
     }
 
     function invoke (fn, self, locals) {
-      locals = locals || getParamNames(fn);
+      var l = typeof fn === 'function' && !locals ? getParamNames(fn) : locals;
       return $injector.invoke(fn, self, locals);
     }
 
@@ -186,44 +182,21 @@
         .then(decorate.bind(this));
     }
 
-    var shouldRequestTemplate = false;
-
-    if (isFunction(original.templateProvider)) {
-      var tplRequest = null;
-      shouldRequestTemplate = true;
-    }
-
     return {
       restrict: 'ACE',
       controllerAs: original.controllerAs,
-      templateUrl: !shouldRequestTemplate ? original.templateUrl : '',
       controller: function ($scope, $element, $attrs) {
-        var ctrl = original.controllerProvider;
-        var ctrlFn;
-        var ctrlDeps;
-
-        if (typeof ctrl === 'object' && ctrl.length) {
-            ctrlFn = ctrl[ctrl.length - 1];
-            ctrlDeps = ctrl.slice(0, ctrl.length - 1);
-        } else if (isFunction(ctrl)) {
-            ctrlFn = ctrl;
-        }
-
-        ctrl = invoke(ctrlFn, null, ctrlDeps);
-
-        return resolveAndDecorate.call(this, $scope, $element, $attrs, ctrl);
+        var ctrlFn = original.controllerProvider;
+        return resolveAndDecorate.call(this, $scope, $element, $attrs, invoke(ctrlFn, null));
       },
       compile: function () {
-        if (shouldRequestTemplate) {
-          tplRequest = $templateRequest(invoke(original.templateProvider, null));
-        }
+        var tplFn = original.templateProvider;
+        var tplRequest = $templateRequest(invoke(tplFn, null));
 
         return function ($scope, $element) {
-          if (tplRequest && tplRequest.$$state) {
-            tplRequest.then(function (html) {
-              $element[0].appendChild($compile(html)($scope)[0]);
-            });
-          }
+          tplRequest.then(function (html) {
+            $element[0].appendChild($compile(html)($scope)[0]);
+          });
 
           function unbind () {
               $document.unbind('keyup', onKeyUp);

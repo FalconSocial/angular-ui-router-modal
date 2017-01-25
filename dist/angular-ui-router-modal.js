@@ -26,9 +26,6 @@
         if (result === null) result = [];
         return result;
     }
-    function isFunction(func) {
-        return typeof func === "function";
-    }
     function $uiRouterModalProvider() {
         var provider = this;
         var config = {};
@@ -102,7 +99,7 @@
             throw new Error("not a modal state!");
         }
         function invoke(fn, self, locals) {
-            locals = locals || getParamNames(fn);
+            var l = typeof fn === "function" && !locals ? getParamNames(fn) : locals;
             return $injector.invoke(fn, self, locals);
         }
         function resolveAndDecorate($scope, $element, $attrs, ctrl) {
@@ -130,34 +127,20 @@
             }
             return $q.all(resolve(resolveKeys)).then(decorate.bind(this));
         }
-        var shouldRequestTemplate = false;
-        if (isFunction(original.templateProvider)) {
-            var tplRequest = null;
-            shouldRequestTemplate = true;
-        }
         return {
             restrict: "ACE",
             controllerAs: original.controllerAs,
-            templateUrl: !shouldRequestTemplate ? original.templateUrl : "",
             controller: function($scope, $element, $attrs) {
-                var ctrl;
-                if (isFunction(original.controllerProvider)) {
-                    ctrl = invoke(original.controllerProvider, null);
-                } else {
-                    ctrl = original.controller;
-                }
-                return resolveAndDecorate.call(this, $scope, $element, $attrs, ctrl);
+                var ctrlFn = original.controllerProvider;
+                return resolveAndDecorate.call(this, $scope, $element, $attrs, invoke(ctrlFn, null));
             },
             compile: function() {
-                if (shouldRequestTemplate) {
-                    tplRequest = $templateRequest(invoke(original.templateProvider, null));
-                }
+                var tplFn = original.templateProvider;
+                var tplRequest = $templateRequest(invoke(tplFn, null));
                 return function($scope, $element) {
-                    if (tplRequest && tplRequest.$$state) {
-                        tplRequest.then(function(html) {
-                            $element[0].appendChild($compile(html)($scope)[0]);
-                        });
-                    }
+                    tplRequest.then(function(html) {
+                        $element[0].appendChild($compile(html)($scope)[0]);
+                    });
                     function unbind() {
                         $document.unbind("keyup", onKeyUp);
                     }
